@@ -1,28 +1,31 @@
-project_name: {{ .PluginName }}
+project_name: slowdrain
 release:
   github:
-    owner: {{ .Owner }}
-    name: {{ .Repo }}
+    owner: cturiel
+    name: kubectl-slowdrain
+before:
+  hooks:
+    - go mod tidy
 builds:
-  - id: {{ .PluginName }}
+  - id: slowdrain
     goos:
     - linux
     - windows
     - darwin
     goarch:
     - amd64
-    - "386"
+    - arm64
     env:
       - CGO_ENABLED=0
       - GO111MODULE=on
     main: cmd/plugin/main.go
     ldflags: -s -w
-      -X github.com/{{ .Owner }}/{{ .Repo }}/pkg/version.version=
+      -X github.com/cturiel/kubectl-slowdrain/pkg/version.version=
 archives:
-  - id: {{ .PluginName }}
+  - id: slowdrain
     builds:
-    - {{ .PluginName }}
-    name_template: {{ `"{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"` }}
+    - slowdrain
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
     - goos: windows
       format: zip
