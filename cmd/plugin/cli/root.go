@@ -1,79 +1,46 @@
 package cli
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/{{ .Owner }}/{{ .Repo }}/pkg/logger"
-	"github.com/{{ .Owner }}/{{ .Repo }}/pkg/plugin"
+	"github.com/cturiel/kubectl-slowdrain/pkg/logger"
+	"github.com/cturiel/kubectl-slowdrain/pkg/plugin"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tj/go-spin"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 var (
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
+	delaySeconds          int
+	infraPrefixes         []string
+	autoConfirm           bool
+	logLevel              string
 )
 
 func RootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "{{ .PluginName }}",
-		Short:         "",
-		Long:          `.`,
-		SilenceErrors: true,
-		SilenceUsage:  true,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			viper.BindPFlags(cmd.Flags())
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			log := logger.NewLogger()
-			log.Info("")
-
-			s := spin.New()
-			finishedCh := make(chan bool, 1)
-			namespaceName := make(chan string, 1)
-			go func() {
-				lastNamespaceName := ""
-				for {
-					select {
-					case <-finishedCh:
-						fmt.Printf("\r")
-						return
-					case n := <-namespaceName:
-						lastNamespaceName = n
-					case <-time.After(time.Millisecond * 100):
-						if lastNamespaceName == "" {
-							fmt.Printf("\r  \033[36mSearching for namespaces\033[m %s", s.Next())
-						} else {
-							fmt.Printf("\r  \033[36mSearching for namespaces\033[m %s (%s)", s.Next(), lastNamespaceName)
-						}
-					}
-				}
-			}()
-			defer func() {
-				finishedCh <- true
-			}()
-
-			if err := plugin.RunPlugin(KubernetesConfigFlags, namespaceName); err != nil {
-				return errors.Unwrap(err)
-			}
-
-			log.Info("")
-
-			return nil
-		},
+		Use:   "kubectl-slowdrain <node_name>",
+		Short: "Drains a Kubernetes node deleting application pods one by one with a delay.",
+		Long:  "This plugin drains a Kubernetes node by deleting application pods one by one with a configurable delay, avoiding downtime for applications.",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runSlowDrain,
 	}
 
-	cobra.OnInitialize(initConfig)
+	cmd.Flags().IntVarP(&delaySeconds, "delay", "d", 20, "Seconds to wait between pod deletions")
+	cmd.Flags().StringSliceVar(&infraPrefixes, "infra-prefixes", []string{"kube-", "openshift-", "infra-"}, "List of namespace prefixes for infra pods")
+	cmd.Flags().BoolVarP(&autoConfirm, "assumeyes", "y", false, "Skip confirmation prompt")
+	cmd.Flags().StringVar(&logLevel, "log-level", "info", "Logging level (debug, info, warn, error)")
 
-	KubernetesConfigFlags = genericclioptions.NewConfigFlags(false)
+	KubernetesConfigFlags = genericclioptions.NewConfigFlags(true)
 	KubernetesConfigFlags.AddFlags(cmd.Flags())
 
+	cobra.OnInitialize(initConfig)
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+
 	return cmd
 }
 
@@ -86,4 +53,26 @@ func InitAndExecute() {
 
 func initConfig() {
 	viper.AutomaticEnv()
+}
+
+// Main function to run the drain of the node
+func runSlowDrain(cmd *cobra.Command, args []string) error {
+	log := logger.NewLogger(logLevel)
+	nodeName := args[0]
+
+	log.Debug("DEBUG log level enabled")
+	log.Info("Initialize the node drain: %s", nodeName)
+
+	config, err := KubernetesConfigFlags.ToRESTConfig()
+	if err != nil {
+		return fmt.Errorf("error getting Kubernetes configuration: %v", err)
+	}
+
+	clientset, err := plugin.NewKubeClient(config)
+	if err != nil {
+		return fmt.Errorf("error creating Kubernetes client: %v", err)
+	}
+
+	ctx := context.Background()
+	return plugin.DrainNode(ctx, clientset, nodeName, delaySeconds, autoConfirm, logLevel, infraPrefixes)
 }
