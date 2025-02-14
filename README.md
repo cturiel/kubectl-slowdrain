@@ -28,7 +28,7 @@ kubectl krew install slowdrain
 Run the plugin with:
 
 ```sh
-kubectl slowdrain NODE_NAME
+kubectl slowdrain <node_name>
 ```
 
 For detailed usage instructions and options, see [USAGE.md](doc/USAGE.md).
