@@ -28,10 +28,10 @@ archives:
     builds:
     - kubectl-slowdrain
     name_template: "{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
-    format: tar.gz
+    formats: [ 'tar.gz' ]
     format_overrides:
     - goos: windows
-      format: zip
+      formats: [ 'zip' ]
     wrap_in_directory: false
     files:
     - LICENSE
