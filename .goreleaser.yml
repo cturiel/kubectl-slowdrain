@@ -1,4 +1,5 @@
-project_name: slowdrain
+version: 2
+project_name: kubectl-slowdrain
 release:
   github:
     owner: cturiel
@@ -7,7 +8,8 @@ before:
   hooks:
     - go mod tidy
 builds:
-  - id: slowdrain
+  - id: kubectl-slowdrain
+    binary: kubectl-slowdrain
     goos:
     - linux
     - windows
@@ -22,10 +24,14 @@ builds:
     ldflags: -s -w
       -X github.com/cturiel/kubectl-slowdrain/pkg/version.version=
 archives:
-  - id: slowdrain
+  - id: kubectl-slowdrain
     builds:
-    - slowdrain
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    - kubectl-slowdrain
+    name_template: "{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
     format_overrides:
     - goos: windows
       format: zip
+    wrap_in_directory: false
+    files:
+    - LICENSE
