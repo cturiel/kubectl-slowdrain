@@ -34,7 +34,7 @@ spec:
         os: windows
         arch: amd64
     {{addURIAndSha "https://github.com/cturiel/kubectl-slowdrain/releases/download/{{ .TagName }}/kubectl-slowdrain_{{ .TagName }}_windows_amd64.zip" .TagName }}
-    bin: kubectl-slowdrain
+    bin: kubectl-slowdrain.exe
   caveats: |
     Usage:
       $ kubectl slowdrain <node-name> --delay 30
