@@ -60,7 +60,7 @@ func DrainNode(ctx context.Context, clientset *kubernetes.Clientset, nodeName st
 		if autoConfirm {
 			log.Warn("Auto-confirmation enabled (-y). Proceeding with draining node %s.", nodeName)
 		} else {
-			fmt.Print("Confirm pod deletion? (yes/no): ")
+			fmt.Print("Confirm pod deletion? [y/N]: ")
 			var confirm string
 			fmt.Scanln(&confirm)
 
