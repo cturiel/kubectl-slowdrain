@@ -89,7 +89,7 @@ func DrainNode(ctx context.Context, clientset *kubernetes.Clientset, nodeName st
 			log.Info("Pod %s/%s successfully deleted", pod.Namespace, pod.Name)
 		}
 
-		log.Info("Waiting %d seconds before deleting the nex pod...", delaySeconds)
+		log.Info("Waiting %d seconds before deleting the next pod...", delaySeconds)
 		time.Sleep(time.Duration(delaySeconds) * time.Second)
 	}
 
