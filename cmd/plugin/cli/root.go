@@ -35,6 +35,8 @@ func RootCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&autoConfirm, "assumeyes", "y", false, "Skip confirmation prompt")
 	cmd.Flags().StringVar(&logLevel, "log-level", "info", "Logging level (debug, info, warn, error)")
 
+	cmd.AddCommand(NewVersionCmd())
+
 	KubernetesConfigFlags = genericclioptions.NewConfigFlags(true)
 	KubernetesConfigFlags.AddFlags(cmd.Flags())
 
