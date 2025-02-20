@@ -31,13 +31,13 @@ func DrainNode(ctx context.Context, clientset *kubernetes.Clientset, nodeName st
 
 	// 1.- Cordon the node
 	log.Info("Mark the node %s as 'cordon'", nodeName)
-	if err := cordonNode(clientset, nodeName); err != nil {
+	if err := cordonNode(ctx, clientset, nodeName); err != nil {
 		return err
 	}
 
 	// 2️.- Get the node pods and classify them into infra vs apps
 	log.Info("Getting pods in the node %s...", nodeName)
-	infraPods, appPods, err := getNodePods(clientset, nodeName, infraPrefixes)
+	infraPods, appPods, err := getNodePods(ctx, clientset, nodeName, infraPrefixes)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func DrainNode(ctx context.Context, clientset *kubernetes.Clientset, nodeName st
 
 	for _, pod := range appPods {
 		log.Info("Deleting pod %s/%s...", pod.Namespace, pod.Name)
-		err := clientset.CoreV1().Pods(pod.Namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+		err := clientset.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{})
 
 		if err != nil {
 			log.Error("Error deleting pod %s/%s: %v", pod.Namespace, pod.Name, err)
@@ -98,8 +98,8 @@ func DrainNode(ctx context.Context, clientset *kubernetes.Clientset, nodeName st
 }
 
 // cordonNode applies the 'cordon' action to a node, marking it as unschedulable
-func cordonNode(clientset *kubernetes.Clientset, nodeName string) error {
-	node, err := clientset.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
+func cordonNode(ctx context.Context, clientset *kubernetes.Clientset, nodeName string) error {
+	node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting node %s: %w", nodeName, err)
 	}
@@ -110,7 +110,7 @@ func cordonNode(clientset *kubernetes.Clientset, nodeName string) error {
 	}
 
 	node.Spec.Unschedulable = true
-	_, err = clientset.CoreV1().Nodes().Update(node)
+	_, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("error applying cordon in the node %s: %w", nodeName, err)
 	}
@@ -120,8 +120,8 @@ func cordonNode(clientset *kubernetes.Clientset, nodeName string) error {
 }
 
 // getNodePods Gets the pods running on a node and classifies them as infrastructure or application pods
-func getNodePods(clientset *kubernetes.Clientset, nodeName string, infraPrefixes []string) ([]v1.Pod, []v1.Pod, error) {
-	pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{
+func getNodePods(ctx context.Context, clientset *kubernetes.Clientset, nodeName string, infraPrefixes []string) ([]v1.Pod, []v1.Pod, error) {
+	pods, err := clientset.CoreV1().Pods("").List(ctx, metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("spec.nodeName=%s", nodeName),
 	})
 	if err != nil {
