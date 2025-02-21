@@ -5,7 +5,7 @@ metadata:
 spec:
   version: {{ .TagName }}
   homepage: https://github.com/cturiel/kubectl-slowdrain
-  shortDescription: Drains a Kubernetes node deleting application pods one by one with a delay
+  shortDescription: Drains a node, deleting app pods one by one with delay
   description: |
     This plugin drains a Kubernetes node by removing application pods one by one
     with a configurable delay between each deletion. This is useful to avoid

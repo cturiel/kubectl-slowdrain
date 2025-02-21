@@ -24,7 +24,7 @@ var (
 func RootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "kubectl-slowdrain <node_name>",
-		Short: "Drains a Kubernetes node deleting application pods one by one with a delay.",
+		Short: "Drains a node, deleting app pods one by one with delay.",
 		Long:  "This plugin drains a Kubernetes node by deleting application pods one by one with a configurable delay, avoiding downtime for applications.",
 		Args:  cobra.ExactArgs(1),
 		RunE:  runSlowDrain,
